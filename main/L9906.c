@@ -8,7 +8,7 @@
 #include "L9906.h"
 #include "esp_log.h"
 
-void predrv_spi_Init(predrv_context_t** out_ctx)
+void predrv_spi_init(predrv_context_t** out_ctx)
 {
     predrv_context_t* ctx = (predrv_context_t*)malloc(sizeof(predrv_context_t));
     gpio_config_t gpio_cfg = {
@@ -54,26 +54,34 @@ void predrv_spi_Init(predrv_context_t** out_ctx)
 }
 
 
-void wr_predrv(predrv_context_t* ctx, int cmd, int data)
+int wr_predrv(predrv_context_t* ctx, int cmd, int data)
 {
-  char low_bit = data;
-  char high_bit = data>>8;
-  spi_transaction_t spi_trans={
-      .flags = SPI_TRANS_USE_RXDATA|SPI_TRANS_USE_TXDATA,
+    int rxdata, txdata;
+    //int low_bit = data&0x00FF;
+    //int high_bit = (data&0xFF00)>>8;
+    txdata = SPI_SWAP_DATA_TX(data, 10);
+   // txdata = data;
+    spi_transaction_t spi_trans={
+      //.flags = SPI_TRANS_USE_RXDATA|SPI_TRANS_USE_TXDATA,
       .cmd = cmd,
       .length = 10,
-      .tx_data = {low_bit,high_bit},
+      .tx_buffer = &txdata,
+      .rx_buffer = &rxdata,
   };
   gpio_set_level(DRV_CS, 0);
   ESP_ERROR_CHECK(spi_device_polling_transmit(ctx->spi, &spi_trans));
   gpio_set_level(DRV_CS,1);
+  rxdata = SPI_SWAP_DATA_RX(rxdata, 10);
+  //printf("spi receive %d, %d\r\n", spi_trans.rx_data[0], spi_trans.rx_data[1]);
+  //rxdata = (spi_trans.rx_data[0]<<8) + (spi_trans.rx_data[1]);
+  return rxdata;
 }
 
 int rd_predrv(predrv_context_t* ctx, int cmd)
 {
   int rxdata;
   spi_transaction_t spi_trans={
-      .flags = SPI_TRANS_USE_RXDATA|SPI_TRANS_USE_TXDATA,
+      //.flags = SPI_TRANS_USE_RXDATA|SPI_TRANS_USE_TXDATA,
       .cmd = cmd,
       .length = 10,
       .rxlength = 10,

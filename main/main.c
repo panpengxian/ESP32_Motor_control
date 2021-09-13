@@ -61,10 +61,12 @@ void timer_task1(void)
 void app_main(void)
 {
     pmic_handle_t pmic_dev;
+    predrv_handle_t predrv_dev;
     s_timer_queue = xQueueCreate(10, sizeof(int));
     //blink();
     
     pmic_spi_init((pmic_context_t**)&pmic_dev);
+    predrv_spi_init((predrv_context_t**)&predrv_dev);
 
     wr_pmic((pmic_context_t*)pmic_dev, WR_SAFETY_CHECK_CTRL, 0x06);
     wr_pmic((pmic_context_t*)pmic_dev, SW_UNLOCK, 0x55);
@@ -80,9 +82,12 @@ void app_main(void)
     // wr_pmic((pmic_context_t*)pmic_dev, WR_SAFETY_ERR_PWM_L, 0x00);
     // wr_pmic((pmic_context_t*)pmic_dev, WR_SAFETY_PWD_THR_CFG, 0x01);
     // wr_pmic((pmic_context_t*)pmic_dev, WR_SAFETY_CFG_CRC, 0x10);
-    wr_pmic((pmic_context_t*)pmic_dev, WR_SAFETY_CHECK_CTRL, 0x25);
+    //wr_pmic((pmic_context_t*)pmic_dev, WR_SAFETY_CHECK_CTRL, 0x25);
 
     //wr_pmic((pmic_context_t*)pmic_dev, WR_SAFETY_BIST_CTRL, 0xe0);
+    int x=1;
+    wr_predrv((predrv_context_t*)predrv_dev, WR_CMD1, 0x3ff);
+
     while(1)
     {
     int dev_id = rd_pmic((pmic_context_t*)pmic_dev, RD_DEV_ID);  
@@ -105,6 +110,8 @@ void app_main(void)
     int safety_func_cfg= rd_pmic((pmic_context_t*)pmic_dev, RD_SAFETY_FUNC_CFG);
     int safety_cfg_crc = rd_pmic((pmic_context_t*)pmic_dev, RD_SAFETY_CFG_CRC);
 
+    printf("Predriver's CMD register is: %d;\r\n", wr_predrv((predrv_context_t*)predrv_dev, RD_CMD1, 0x000));
+
     printf("Device ID is %d;\r\n",dev_id);
     printf("Device Revision is %d;\r\n", dev_rev);
     printf("Device State is %d;\r\n",dev_state);
@@ -124,8 +131,9 @@ void app_main(void)
     printf("WIN1_CFG: %d;\r\n", rd_pmic((pmic_context_t*)pmic_dev, RD_WD_WIN1_CFG));
     printf("WIN2_CFG: %d;\r\n", rd_pmic((pmic_context_t*)pmic_dev, RD_WD_WIN2_CFG));
     printf("Safety Control: %d;\r\n", rd_pmic((pmic_context_t*)pmic_dev, RD_SAFETY_CHECK_CTRL));
-    read_endrv();
+    //read_endrv();
     vTaskDelay(2000/portTICK_PERIOD_MS);
+    x++;
     }
     //xTaskCreate(print1, "print1", 8192, NULL, 1, NULL);
     //xTaskCreate(print2, "print2", 8192, NULL, 1, NULL);
